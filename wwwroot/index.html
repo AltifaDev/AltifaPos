@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AltifaPos</title>
+    <link href="/" />
+    <link href="css/tailwind.css" rel="stylesheet">
+    <link href="css/app.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="app">Loading...</div>
+
+
+    <script src="/js/site.js"></script>
+    <script src="https://kit.fontawesome.com/4f960807da.js" crossorigin="anonymous"></script>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="indexedDb.js"></script> <!-- Add this line -->
+    <script>
+        window.toggleSidebar = (open) => {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) {
+                if (open) {
+                    sidebar.classList.remove('hidden');
+                    setTimeout(() => {
+                        sidebar.classList.add('sidebar-open');
+                    }, 10); // small delay to ensure class removal is processed
+                } else {
+                    sidebar.classList.remove('sidebar-open');
+                    setTimeout(() => {
+                        sidebar.classList.add('hidden');
+                    }, 300); // match this to the CSS transition duration
+                }
+            }
+        };
+    </script>
+</body>
+
+</html>

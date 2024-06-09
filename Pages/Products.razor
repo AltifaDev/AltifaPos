@@ -1,0 +1,283 @@
+﻿@page "/products"
+@using AltifaPos
+@using AltifaPos.Models
+@using AltifaPos.Services
+@using AltifaPos.Components
+@inject IndexedDbService DbService
+@using Microsoft.AspNetCore.Components.Forms
+@inject IJSRuntime JSRuntime
+
+<h3 class="text-2xl font-bold mb-4">Products</h3>
+<button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @onclick="ShowAddForm">Add Product</button>
+<button @onclick="ToggleModal" class="bg-blue-500 hover:bg-blue-700 text-black font-bold py-2 px-4 rounded">
+    Open Form Popup
+</button>
+<!-- Modal -->
+<div class="relative p-4 w-full max-w-2xl max-h-full animate-fade-down" style="display: @(isModalOpen ? "block" : "none")">
+    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+
+        <div class="p-4 md:p-5 space-y-4">
+            <button @onclick="ToggleModal" class="absolute top-0 right-0 m-4">&times;</button>
+
+            <!-- Your form goes here -->
+            <form>
+            </form>
+        </div>
+    </div>
+</div>
+
+@if (isAdding || isEditing)
+{
+    <EditForm Model="@currentProduct" OnValidSubmit="SaveProduct">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="space-y-12 p-4 m-4">
+            <div class="border-b border-gray-900/10 pb-12">
+                <h2 class="text-base font-semibold leading-7 text-gray-900">Product Management</h2>
+                <p class="mt-1 text-sm leading-6 text-gray-600">This information will be displayed publicly so be careful what you share.</p>
+
+                <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <div class="col-span-full">
+                        <label for="cover-photo" class="block text-sm font-medium leading-6 text-gray-900">Cover photo</label>
+                        <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
+                            <div class="text-center">
+                                @if (!string.IsNullOrEmpty(currentProduct.ImageBase64))
+                                {
+                                    <img src="@($"data:image/png;base64,{currentProduct.ImageBase64}")" class="img-fluid mb-3 mx-auto h-12 w-12" alt="Product Image" />
+                                }
+                                else
+                                {
+                                    <svg class="mx-auto h-12 w-12 text-gray-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd" />
+                                    </svg>
+                                }
+                                <div class="mt-4 flex text-sm leading-6 text-gray-600">
+                                    <InputFile class="sr-only" id="image" OnChange="OnInputFileChange" />
+                                    <label for="image" class="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
+                                        <span>Upload a file</span>
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 mt-10">
+                    <div class="sm:col-span-3">
+                        <label for="productname" class="block text-sm font-medium leading-6 text-gray-900">Product Name</label>
+                        <div class="mt-2">
+                            <InputText class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" id="productname" @bind-Value="currentProduct.ProductName" />
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-3">
+                        <label for="category" class="block text-sm font-medium leading-6 text-gray-900">Category Name</label>
+                        <div class="mt-2">
+                            <InputSelect id="categoryId" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6" @bind-Value="currentProduct.CatagoryID">
+                                @foreach (var category in categories)
+                                {
+                                    <option value="@category.CatagoryID">@category.CategoryName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-2 sm:col-start-1">
+                        <label for="quantity" class="block text-sm font-medium leading-6 text-gray-900">Quantity</label>
+                        <div class="mt-2">
+                            <InputNumber class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" id="quantity" @bind-Value="currentProduct.Qauntity" />
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="unit" class="block text-sm font-medium leading-6 text-gray-900">Unit</label>
+                        <div class="mt-2">
+                            <InputText class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" id="unit" @bind-Value="currentProduct.Unit" />
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="price" class="block text-sm font-medium leading-6 text-gray-900">Price</label>
+                        <div class="mt-2">
+                            <InputNumber class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" id="price" @bind-Value="currentProduct.Price" />
+                        </div>
+                    </div>
+
+                    <div class="col-span-full">
+                        <label for="description" class="block text-sm font-medium leading-6 text-gray-900">Description</label>
+                        <div class="mt-2">
+                            <InputText class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" id="description" @bind-Value="currentProduct.Description" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-b border-gray-900/10 pb-12">
+                <div class="mt-10 space-y-10">
+                    <fieldset>
+                        <legend class="text-sm font-semibold leading-6 text-gray-900">Product Display</legend>
+                        <div class="mt-6 space-y-6">
+                            <div class="relative flex gap-x-3">
+                                <div class="flex items-center gap-x-3">
+                                    <InputCheckbox id="Already" @bind-Value="currentProduct.AlreadySale" />
+                                    <label for="Already" class="block text-sm font-medium leading-6 text-gray-900">Already Sale</label>
+                                </div>
+                                <div class="flex items-center gap-x-3">
+                                    <InputCheckbox id="Waiting" @bind-Value="currentProduct.WaitingSale" />
+                                    <label for="Waiting" class="block text-sm font-medium leading-6 text-gray-900">Waiting Sale</label>
+                                </div>
+                                <div class="flex items-center gap-x-3">
+                                    <InputCheckbox id="NotSale" @bind-Value="currentProduct.NotSale" />
+                                    <label for="NotSale" class="block text-sm font-medium leading-6 text-gray-900">No Sale</label>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-end gap-x-6">
+                <button type="button" class="text-sm font-semibold leading-6 text-gray-900" @onclick="CancelEdit">Cancel</button>
+                <button type="submit" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Save</button>
+            </div>
+        </div>
+    </EditForm>
+}
+ 
+
+<div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+        <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-200">
+        @foreach (var product in products)
+        {
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    @if (!string.IsNullOrEmpty(product.ImageBase64))
+                    {
+                        <img src="@($"data:image/png;base64,{product.ImageBase64}")" class="img-fluid mb-3 mx-auto h-8 w-12" alt="Product Image" />
+                    }
+                    else
+                    {
+                        <svg class="mx-auto h-12 w-12 text-gray-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd" />
+                        </svg>
+                    }
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">@product.ProductName</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    @categories.FirstOrDefault(c => c.CatagoryID == product.CatagoryID)?.CategoryName
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">@product.Qauntity</td>
+                <td class="px-6 py-4 whitespace-nowrap">@product.Unit</td>
+                <td class="px-6 py-4 whitespace-nowrap">@product.Price</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    @if (product.AlreadySale)
+                    {
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Already Sale</span>
+                    }
+                    else if (product.WaitingSale)
+                    {
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Waiting Sale</span>
+                    }
+                    else
+                    {
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">No Sale</span>
+                    }
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button class="text-indigo-600 hover:text-indigo-900" @onclick="() => EditProduct(product)">Edit</button>
+                    <button class="text-red-600 hover:text-red-900" @onclick="() => DeleteProduct(product.ProductId)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+ </div>
+@code {
+    private List<Product> products = new();
+    private List<Categories> categories = new();
+    private Product currentProduct = new();
+    private bool isAdding = false;
+    private bool isEditing = false;
+    private bool isModalOpen = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = await DbService.GetProducts();
+        categories = await DbService.GetCategories();
+    }
+
+    private void ToggleModal()
+    {
+        isModalOpen = !isModalOpen;
+    }
+
+    private void ShowAddForm()
+    {
+        currentProduct = new Product();
+        isAdding = true;
+        isEditing = false;
+    }
+
+    private async Task SaveProduct()
+    {
+        if (isAdding)
+        {
+            await DbService.AddProduct(currentProduct);
+            products = await DbService.GetProducts();
+        }
+        else if (isEditing)
+        {
+            await DbService.EditProduct(currentProduct);
+            products = await DbService.GetProducts();
+        }
+
+        isAdding = false;
+        isEditing = false;
+    }
+
+    private void EditProduct(Product product)
+    {
+        currentProduct = product;
+        isAdding = false;
+        isEditing = true;
+    }
+
+    private async Task DeleteProduct(int id)
+    {
+        await DbService.DeleteProduct(id);
+        products = await DbService.GetProducts();
+    }
+
+    private void CancelEdit()
+    {
+        isAdding = false;
+        isEditing = false;
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        var resizedImage = await file.RequestImageFileAsync("image/png", 150, 150);
+        var buffer = new byte[resizedImage.Size];
+        await resizedImage.OpenReadStream().ReadAsync(buffer);
+        currentProduct.ImageBase64 = Convert.ToBase64String(buffer);
+    }
+}

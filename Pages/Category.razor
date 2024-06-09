@@ -1,0 +1,103 @@
+﻿@page "/categories"
+@using AltifaPos.Models
+@using AltifaPos.Services
+@inject IndexedDbService DbService
+@inject IJSRuntime JSRuntime
+@using Microsoft.AspNetCore.Components.Forms
+
+<h4 class="text-2xl font-bold mb-4">Categories</h4>
+<div class="space-y-12 p-4 m-4">
+    <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+        <div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                @if (isEditing)
+                {
+                    <h3>Edit Category</h3>
+                }
+                else
+                {
+                    <h3>Add Category</h3>
+                }
+            </h3>
+            <div class="mt-2">
+                <EditForm Model="@currentCategory" OnValidSubmit="SaveCategory">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 mt-10">
+                        <div class="sm:col-span-3">
+                            <div class="mt-2">
+                                <label for="categoryName" class="block text-sm font-medium leading-6 text-gray-900">Category Name</label>
+                                <InputText id="categoryName" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" @bind-Value="currentCategory.CategoryName" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex items-center justify-end gap-x-6">
+                        <button type="submit" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600">
+                            Save
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+        <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-200">
+        @foreach (var category in categories)
+        {
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap">@category.CategoryName</td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button class="text-indigo-600 hover:text-indigo-900" @onclick="() => EditCategory(category)">Edit</button>
+                    <button class="text-red-600 hover:text-red-900" @onclick="() => DeleteCategory(category.CatagoryID)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Categories> categories = new();
+    private Categories currentCategory = new();
+    private bool isEditing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await DbService.GetCategories();
+    }
+
+    private void EditCategory(Categories category)
+    {
+        currentCategory = category;
+        isEditing = true;
+    }
+
+    private async Task SaveCategory()
+    {
+        if (isEditing)
+        {
+            await DbService.EditCategory(currentCategory);
+        }
+        else
+        {
+            await DbService.AddCategory(currentCategory);
+        }
+
+        currentCategory = new Categories();
+        isEditing = false;
+        categories = await DbService.GetCategories();
+    }
+
+    private async Task DeleteCategory(int id)
+    {
+        await DbService.DeleteCategory(id);
+        categories = await DbService.GetCategories();
+    }
+}

@@ -1,0 +1,47 @@
+﻿@page "/"
+
+<div>
+    <!-- Button to toggle modal -->
+    <button @onclick="ToggleModal" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Open Form Popup
+    </button>
+
+    <!-- Modal -->
+    <div class="fixed z-10 inset-0 overflow-y-auto" style="display: @(isModalOpen ? "block" : "none")">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+
+            <div class="relative bg-white rounded-lg p-8 max-w-md">
+                <button @onclick="ToggleModal" class="absolute top-0 right-0 m-4">&times;</button>
+                <h2 class="text-lg font-semibold mb-4">Modal Form</h2>
+                <!-- Your form goes here -->
+                <form>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                            Email
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="Enter your email">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <button @onclick="ToggleModal" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
+                            Close
+                        </button>
+                        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                            Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    bool isModalOpen = false;
+
+    void ToggleModal()
+    {
+        isModalOpen = !isModalOpen;
+    }
+}

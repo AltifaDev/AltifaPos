@@ -1,0 +1,54 @@
+﻿@using Microsoft.JSInterop
+
+<div class="relative">
+    <div id="sidebar" class="fixed inset-y-0 lelf-0 z-40 flex w-64 bg-gray-800 text-white sidebar-animate @(IsSidebarOpen ? "sidebar-open" : "hidden")">
+        <button @onclick="ToggleSidebar" class="absolute top-0 right-0 m-4 p-2 text-white rounded focus:outline-none">
+            <i class="fas fa-bars text-blue-500"></i>
+        </button>
+        <div class="h-screen flex flex-col">
+            <div class="p-4 text-2xl font-bold border-b border-gray-700 text-center">
+                <h4>ALTIFA POS</h4>
+            </div>
+            <nav class="flex-1 p-4">
+                <ul>
+                    <NavLink class="mb-2" href="/" Match="NavLinkMatch.All">
+                        <span class="block p-2 rounded hover:bg-gray-700">
+                            <i class="fa-solid fa-chart-line"></i> Dashboard
+                        </span>
+                    </NavLink>
+                    <NavLink class="mb-2" href="counter">
+                        <span class="block p-2 rounded hover:bg-gray-700">
+                            <i class="fa fa-tv"></i> POS
+                        </span>
+                    </NavLink>
+                    <NavLink class="mb-2" href="Products">
+                        <span class="block p-2 rounded hover:bg-gray-700">
+                            <i class="fa fa-database"></i> Product Management
+                        </span>
+                    </NavLink>
+                    <NavLink class="mb-2" href="Products">
+                        <span class="block p-2 rounded hover:bg-gray-700">
+                            <i class="fa fa-database"></i> Product Management
+                        </span>
+                    </NavLink>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    <!-- Toggle button is hidden when sidebar is open -->
+    <button @onclick="ToggleSidebar" class="absolute top-0 left-0 m-4 p-2 text-white rounded focus:outline-none" hidden="@IsSidebarOpen">
+        <i class="fas fa-bars text-blue-500"></i>
+    </button>
+</div>
+
+@code {
+    [Inject] private IJSRuntime JSRuntime { get; set; }
+
+    private bool IsSidebarOpen { get; set; } = false;
+
+    private async Task ToggleSidebar()
+    {
+        IsSidebarOpen = !IsSidebarOpen;
+        await JSRuntime.InvokeVoidAsync("toggleSidebar", IsSidebarOpen);
+    }
+}
